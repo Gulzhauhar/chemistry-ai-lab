@@ -154,6 +154,7 @@ if data:
     show_ai(data["ai"])
     show_test(data["test"])
 else:
+    
     st.warning("Бұл сабаққа контент кезең-кезеңімен қосылады")
 
 st.markdown("---")
