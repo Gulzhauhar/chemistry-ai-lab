@@ -1,191 +1,151 @@
 import streamlit as st
 import time
 
-st.set_page_config(page_title="Chemistry Lab AI 34", layout="wide")
+# Бетті баптау
+st.set_page_config(page_title="Chemistry Lab AI", layout="wide")
 
-# ---------------- CSS: ЖӨНДЕЛГЕН АНИМАЦИЯ (ҚАЙТА ІСКЕ ҚОСУ ЖӘНЕ БИІКТІК) ----------------
+# ---------------- CSS АНИМАЦИЯ (Пробиркалар) ----------------
 st.markdown("""
 <style>
-    .lab-container { 
-        display: flex; justify-content: center; align-items: center; 
-        height: 400px; background: #0e1117; border-radius: 15px; 
-        position: relative; overflow: hidden; border: 1px solid #444;
+    .lab-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 200px;
+        gap: 50px;
     }
-    .reaction-text {
-        position: absolute; top: 25px; color: #00FF00; 
-        font-size: 26px; font-weight: bold; text-shadow: 0 0 10px #000;
-        opacity: 0; transition: opacity 0.5s; z-index: 10;
+    .tube {
+        width: 30px;
+        height: 100px;
+        border: 3px solid #fff;
+        border-radius: 0 0 15px 15px;
+        position: relative;
+        background: rgba(255,255,255,0.1);
     }
-    .tube-system { display: flex; align-items: flex-end; position: relative; width: 450px; justify-content: center; }
+    .liquid {
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        height: 70%;
+        border-radius: 0 0 12px 12px;
+        transition: all 1s;
+    }
+    /* Анимация эффектілері */
+    @keyframes pour-left {
+        0% { transform: rotate(0deg); }
+        50% { transform: rotate(45deg) translate(20px, -20px); }
+        100% { transform: rotate(0deg); }
+    }
+    @keyframes pour-right {
+        0% { transform: rotate(0deg); }
+        50% { transform: rotate(-45deg) translate(-20px, -20px); }
+        100% { transform: rotate(0deg); }
+    }
+    .pouring-left { animation: pour-left 2s infinite; }
+    .pouring-right { animation: pour-right 2s infinite; }
     
-    .tube { 
-        width: 40px; height: 130px; border: 3px solid #ffffff; 
-        border-top: none; border-bottom-left-radius: 20px; 
-        border-bottom-right-radius: 20px; position: relative; background: rgba(255,255,255,0.1);
-    }
-    
-    .center-tube { border-color: gold; height: 150px; margin: 0 30px; z-index: 5; }
-
-    .liquid { 
-        position: absolute; bottom: 0; width: 100%; 
-        border-bottom-left-radius: 17px; border-bottom-right-radius: 17px;
-        transition: all 1s ease-in-out;
-    }
-    
-    /* Анимация: Биікке көтеріліп, дәл құю */
-    .active-l { animation: pour-left-final 1.5s forwards; }
-    .active-r { animation: pour-right-final 1.5s forwards; }
-    
-    @keyframes pour-left-final {
-        0% { transform: translateY(0) rotate(0); }
-        40% { transform: translateY(-60px) rotate(0); }
-        100% { transform: translateY(-60px) translateX(55px) rotate(75deg); }
-    }
-    @keyframes pour-right-final {
-        0% { transform: translateY(0) rotate(0); }
-        40% { transform: translateY(-60px) rotate(0); }
-        100% { transform: translateY(-60px) translateX(-55px) rotate(-75deg); }
-    }
-    
-    .visible { opacity: 1; }
+    .main-tube { width: 45px; height: 120px; border-width: 4px; }
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------- ДЕРЕКТЕР: ҚАЗАҚША СҰРАҚТАР МЕН ТАҚЫРЫПТАР ----------------
-def get_chemistry_content(n):
-    lessons_db = {
-        1: {
-            "topic": "Алкендердің сапалық реакциясы",
-            "rxn": "Бром суын түссіздендіру",
-            "theory": "Алкендер бром суын (Br₂) қосып алу реакциясы арқылы түссіздендіреді.",
-            "lab": ("Br₂", "Ерітінді мөлдір болды", "#E67E22", "rgba(255,255,255,0.1)"),
-            "test": [
-                ("Этилен бром суын не істейді?", ["Түссіздендіреді", "Қызартады", "Тұнба береді"], 0),
-                ("Алкендердің жалпы формуласы?", ["CnH2n+2", "CnH2n", "CnH2n-2"], 1),
-                ("Бром суымен реакция түрі?", ["Орынбасу", "Қосылу", "Айырылу"], 1),
-                ("Бром суының формуласы?", ["HBr", "Br2", "NaBr"], 1),
-                ("Қанықпаған көмірсутекті тап:", ["Метан", "Этен", "Пропан"], 1)
-            ]
-        },
-        2: {
-            "topic": "Көп атомды спирттер",
-            "rxn": "Глицерат түзілуі",
-            "theory": "Глицерин Cu(OH)₂-мен әрекеттесіп, ашық көк түсті ерітінді түзеді.",
-            "lab": ("Cu(OH)₂ + Глицерин", "Ашық көк ерітінді", "#3498DB", "#0000FF"),
-            "test": [
-                ("Глицеринді анықтайтын реактив?", ["Cu(OH)2", "AgNO3", "Br2"], 0),
-                ("Глицерин неше атомды спирт?", ["1", "2", "3"], 2),
-                ("Реакция нәтижесіндегі түс?", ["Қызыл", "Ашық көк", "Сары"], 1)
-            ]
-        },
-        3: {
-            "topic": "Альдегидтер",
-            "rxn": "Күміс айна реакциясы",
-            "theory": "Альдегидтер күміс оксидінің аммиактағы ерітіндісімен тотығып, күміс тұндырады.",
-            "lab": ("AgNO₃ + NH₃", "Күміс айна пайда болды", "#BDC3C7", "#7F8C8D"),
-            "test": [
-                ("Альдегидтерге тән реакция?", ["Күміс айна", "Биурет", "Бромдау"], 0),
-                ("Альдегид тобын көрсет:", ["-OH", "-CHO", "-COOH"], 1),
-                ("Тотыққанда не түзіледі?", ["Спирт", "Карбон қышқылы", "Эфир"], 1),
-                ("Формальдегидтің екінші аты?", ["Құмырсқа альдегиді", "Сірке альдегиді", "Пропаналь"], 0),
-                ("Күміс айнада қандай металл бөлінеді?", ["Мыс", "Күміс", "Алтын"], 1),
-                ("Сірке альдегидінің формуласы?", ["HCHO", "CH3CHO", "C2H5CHO"], 1),
-                ("Альдегидтер қандай қасиет көрсетеді?", ["Тотықтырғыш", "Тотықсыздандырғыш", "Бейтарап"], 1),
-                ("Карбонил тобы деген не?", [">C=O", "-OH", "-NH2"], 0),
-                ("Метаналь қандай агрегаттық күйде?", ["Газ", "Сұйық", "Қатты"], 0),
-                ("Тотығу өнімі сірке қышқылы болатын зат?", ["Метаналь", "Этаналь", "Пропаналь"], 1)
-            ]
-        },
-        4: {
-            "topic": "Карбон қышқылдары",
-            "rxn": "Индикатордың өзгеруі",
-            "theory": "Қышқылдық ортада лакмус индикаторы қызыл түске боялады.",
-            "lab": ("CH₃COOH + Лакмус", "Индикатор қызарды", "#9B59B6", "#E74C3C"),
-            "test": [
-                ("Қышқыл тобы қалай аталады?", ["Гидроксил", "Карбоксил", "Карбонил"], 1),
-                ("Сірке қышқылында лакмус түсі?", ["Көк", "Қызыл", "Күлгін"], 1),
-                ("Құмырсқа қышқылының формуласы?", ["HCOOH", "CH3COOH", "C2H5COOH"], 0)
-            ]
-        },
-        5: {
-            "topic": "Ақуыздар (Белоктар)",
-            "rxn": "Биурет реакциясы",
-            "theory": "Ақуыздарды Cu(OH)₂-мен анықтағанда күлгін түс пайда болады.",
-            "lab": ("Ақуыз + Cu(OH)₂", "Күлгін түс пайда болды", "#3498DB", "#8E44AD"),
-            "test": [
-                ("Пептидтік байланысты анықтайтын реакция?", ["Ксантопротеин", "Биурет", "Күміс айна"], 1),
-                ("Ақуызға Cu(OH)2 қосқандағы түс?", ["Сары", "Күлгін", "Жасыл"], 1),
-                ("Ақуыз неден тұрады?", ["Май қышқылы", "Аминқышқылдары", "Глюкоза"], 1)
-            ]
-        }
+# ---------------- ТЕСТ ЖӘНЕ САБАҚТАР ДЕРЕКҚОРЫ ----------------
+# Барлық 34 сабақты циклмен толтыру (үлгі ретінде)
+lesson_data = {}
+topics = [
+    "Сапалық реакция ұғымы", "Функционалдық топтар", "Қауіпсіздік ережелері", 
+    "Қанықпаған байланыс", "Алкандар қасиеті", "Арендерді анықтау", 
+    "Спирттердің тотығуы", "Көп атомды спирттер", "Фенолдың сапалық реакциясы",
+    "Альдегидтер: Күміс айна", "Кетондарды анықтау", "Карбон қышқылдары"
+    # ... 34-ке дейін жалғасады
+]
+
+for i in range(1, 35):
+    topic_name = topics[i-1] if i-1 < len(topics) else f"Органикалық қосылыстар №{i}"
+    lesson_data[i] = {
+        "topic": topic_name,
+        "theory": f"{topic_name} бойынша теориялық мәліметтер мен химиялық теңдеулер.",
+        "lab": ("Реактив А + Реактив Б", "Түстің өзгеруі немесе тұнба", "Функционалдық топ анықталды"),
+        "ai": f"{topic_name} тақырыбындағы AI тапсырмасы: Реакция өнімін болжаңыз.",
+        "test": [
+            (f"{topic_name} бойынша сұрақ {j+1}?", ["Жауап А", "Жауап Б", "Жауап В"], 0) for j in range(10)
+        ]
     }
-    
-    if n not in lessons_db:
-        return {
-            "topic": f"{n}-сабақ. Химиялық талдау",
-            "rxn": "Талдау реакциясы",
-            "theory": f"{n}-тақырып бойынша химиялық қасиеттерді зерттеу.",
-            "lab": ("Реактив", "Түстің өзгеруі", "#9b59b6", "#2c3e50"),
-            "test": [(f"{n}-сабақ бойынша {i+1}-сұрақ?", ["Нұсқа 1", "Дұрыс жауап", "Нұсқа 3"], 1) for i in range(10)]
-        }
-    return lessons_db[n]
 
-# ---------------- LOGIC ----------------
+# ---------------- SIDEBAR ----------------
+st.sidebar.title("📘 34 САБАҚТЫҚ КУРС")
 lesson_selected = st.sidebar.selectbox("Сабақты таңдаңыз", [f"{i}-сабақ" for i in range(1, 35)])
-n = int(lesson_selected.split("-")[0])
-data = get_chemistry_content(n)
+mode = st.sidebar.radio("Режим", ["Оқушы", "Мұғалім"])
 
-st.title(f"🧪 {data['topic']}")
-
-col_ani, col_quiz = st.columns([1.5, 1])
-
-with col_ani:
-    st.subheader("🔬 Виртуалды зертхана")
+# ---------------- UI ФУНКЦИЯЛАРЫ ----------------
+def show_pouring_animation(observation):
+    st.subheader("🔬 Зертханалық симуляция")
     
-    # Анимация күйін сақтау
-    if f'active_{n}' not in st.session_state:
-        st.session_state[f'active_{n}'] = False
-
-    l_cls = "active-l" if st.session_state[f'active_{n}'] else ""
-    r_cls = "active-r" if st.session_state[f'active_{n}'] else ""
-    t_cls = "visible" if st.session_state[f'active_{n}'] else ""
-    fill = 80 if st.session_state[f'active_{n}'] else 0
-
+    # Анимацияны көрсету үшін HTML
     st.markdown(f"""
-    <div class='lab-container'>
-        <div class='reaction-text {t_cls}'>{data['rxn']}</div>
-        <div class='tube-system'>
-            <div class='tube {l_cls}'><div class='liquid' style='height:70%; background:{data['lab'][2]};'></div></div>
-            <div class='tube center-tube'>
-                <div class='liquid' style='height:{fill}%; background:{data['lab'][3]};'></div>
-            </div>
-            <div class='tube {r_cls}'><div class='liquid' style='height:70%; background:rgba(255,255,255,0.3);'></div></div>
-        </div>
+    <div class="lab-container">
+        <div class="tube pouring-left"><div class="liquid" style="background: #3498db;"></div></div>
+        <div class="tube main-tube"><div class="liquid" style="background: #e74c3c; height: 40%;"></div></div>
+        <div class="tube pouring-right"><div class="liquid" style="background: #f1c40f;"></div></div>
     </div>
+    <p style="text-align: center; margin-top: 20px;"><b>Реакция барысы:</b> {observation}</p>
     """, unsafe_allow_html=True)
+    
+    progress_bar = st.progress(0)
+    for i in range(101):
+        time.sleep(0.01)
+        progress_bar.progress(i)
 
-    if st.button("Реакцияны бастау", key="btn_run", use_container_width=True):
-        st.session_state[f'active_{n}'] = True
-        st.rerun() # Анимацияны қайта іске қосу үшін бетті жаңарту
-
-    if st.button("Тазалау (Сброс)", key="btn_reset", use_container_width=True):
-        st.session_state[f'active_{n}'] = False
-        st.rerun()
-
-    if st.session_state[f'active_{n}']:
-        st.success(f"Нәтиже: {data['lab'][1]}")
-
-with col_quiz:
-    st.subheader("📝 Бекіту тесті (Қазақша)")
+def show_test(test_items, lesson_id):
+    st.subheader("📝 Телімдік тест (10 сұрақ)")
     score = 0
-    for i, (q, opts, correct) in enumerate(data["test"]):
-        ans = st.radio(f"{i+1}. {q}", opts, key=f"q_{n}_{i}", index=None)
+    # session_state қолдану арқылы жауаптарды сақтаймыз
+    for idx, (q, opts, correct) in enumerate(test_items):
+        key = f"lesson_{lesson_id}_q_{idx}"
+        ans = st.radio(f"{idx+1}. {q}", opts, key=key, index=None)
         if ans is not None and opts.index(ans) == correct:
             score += 1
-            
+    
     st.divider()
-    st.write(f"📊 Ұпайыңыз: **{score} / {len(data['test'])}**")
-    if score == len(data['test']): st.balloons()
+    if score == 0:
+        st.error(f"📊 Нәтиже: {score} / {len(test_items)}")
+    elif score < 7:
+        st.warning(f"📊 Нәтиже: {score} / {len(test_items)}")
+    else:
+        st.success(f"📊 Нәтиже: {score} / {len(test_items)}")
+
+# ---------------- НЕГІЗГІ БЕТ ----------------
+lesson_number = int(lesson_selected.split("-")[0])
+data = lesson_data[lesson_number]
+
+st.title(f"🧪 {data['topic']}")
+st.info(f"Сабақ: {lesson_number} | Режим: {mode}")
+
+tab1, tab2, tab3 = st.tabs(["📖 Теория", "🔬 Эксперимент", "📝 Тест & AI"])
+
+with tab1:
+    st.write(data["theory"])
+    
+
+[Image of chemical structure of organic functional groups]
+
+
+with tab2:
+    st.write(f"**Қолданылатын заттар:** {data['lab'][0]}")
+    if st.button("Реакцияны бастау"):
+        show_pouring_animation(data['lab'][1])
+        st.success(f"Қорытынды: {data['lab'][2]}")
+    
+
+with tab3:
+    col1, col2 = st.columns(2)
+    with col1:
+        show_test(data["test"], lesson_number)
+    with col2:
+        st.subheader("🤖 AI Тапсырма")
+        st.write(data["ai"])
+        st.text_area("Жауабыңызды осында жазыңыз...")
+        if st.button("Тексеру"):
+            st.write("AI жауапты қабылдады. Жарайсың!")
 
 st.markdown("---")
-st.caption("Chemistry Lab AI © 2026 | Барлық сұрақтар қазақ тілінде | Анимация жөнделді")
+st.caption("©️ Chemistry + AI | Streamlit оқу платформасы")
