@@ -97,52 +97,34 @@ def show_theory(text):
 def show_lab(reagents, observation, conclusion):
     st.subheader("🔬 Зертханалық жұмыс")
     st.write(f"**Реактивтер:** {reagents}")
-    st.write("**Зертханалық реакция анимациясы:**")    st.markdown(
-        """
-        <style>
-        .test-tube {
-            width: 60px;
-            height: 200px;
-            border: 4px solid #555;
-            border-radius: 0 0 30px 30px;
-            margin: auto;
-            position: relative;
-            background: white;
-            overflow: hidden;
-        }
-        .liquid {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            height: 0%;
-            background: #8b0000;
-            animation: fill 3s forwards;
-        }
-        @keyframes fill {
-            from { height: 0%; }
-            to { height: 70%; }
-        }
-        </style>
 
-        <div class="test-tube">
-            <div class="liquid"></div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    st.write("**Реакция барысы (анимация):**")
 
-    progress_bar = st.progress(0)
-    reaction_status = st.empty()
-    for i in range(1, 101):
-        time.sleep(0.01)
-        progress_bar.progress(i)
-        if i < 30:
-            reaction_status.text("Реактив қосылды...")
-        elif i < 70:
-            reaction_status.text(f"Бақылау: {observation}")
+    animation_box = st.empty()
+    progress = st.progress(0)
+
+    stages = [
+        "⚗️ Пробирка дайындалды",
+        "💧 Реактив тамызылуда...",
+        "🧪 Араластыру жүріп жатыр...",
+        f"👀 Бақылау: {observation}",
+        f"✅ Қорытынды: {conclusion}"
+    ]
+
+    for i in range(101):
+        time.sleep(0.03)
+        progress.progress(i)
+
+        if i < 20:
+            animation_box.markdown(stages[0])
+        elif i < 40:
+            animation_box.markdown(stages[1])
+        elif i < 60:
+            animation_box.markdown(stages[2])
+        elif i < 80:
+            animation_box.markdown(stages[3])
         else:
-            reaction_status.text(f"Қорытынды: {conclusion}")
-    reaction_status.text(f"Қорытынды: {conclusion}")
+            animation_box.markdown(stages[4])
 
 def show_ai(task):
     st.subheader("🤖 AI-симуляция тапсырмасы")
