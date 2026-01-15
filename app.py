@@ -15,11 +15,12 @@ st.title("🧪 Органикалық функционалдық топтард�
 st.caption(f"Таңдалған: {lesson_selected} | Режим: {mode}")
 
 # ---------------- DATA ----------------
+# Әр сабаққа "colors" (бастапқы түс және соңғы түс) қосылды
 lesson_data = {
-    # 1–2 сабақтар бұрынғыдай
     1: {"topic": "Сапалық реакция ұғымы",
         "theory": "Сапалық реакция – функционалдық топты реакция белгісі арқылы анықтау әдісі.",
         "lab": ("Br₂", "Түс қызылдан түссізге өзгереді", "Алкен бар екенін көрсетеді"),
+        "colors": ["#A52A2A", "rgba(255,255,255,0.3)"], # Қызыл-қоңыр -> Түссіз
         "ai": "Берілген қосылыстың функционалдық тобын AI арқылы болжа",
         "test": [
             ("Br₂ нені анықтайды?", ["Алкан", "Алкен", "Спирт"], 1),
@@ -37,6 +38,7 @@ lesson_data = {
     2: {"topic": "Функционалдық топтар",
         "theory": "Органикалық қосылыстар функционалдық топтар арқылы жіктеледі.",
         "lab": ("Cu(OH)₂", "Көк түске боялады", "Спирт бар екенін көрсетеді"),
+        "colors": ["#0000FF", "#8A2BE2"], # Көк -> Күлгін (көгілдір)
         "ai": "Берілген формуладан топты анықта",
         "test": [
             ("–OH қай топ?", ["Амин", "Спирт", "Қышқыл"], 1),
@@ -51,10 +53,10 @@ lesson_data = {
             ("Топты анықтаудың реактиві?", ["Cu(OH)₂", "Br₂", "HCl"], 0)
         ]
     },
-    # ---------------- 3–34 сабақтарды толықтай нақты химиялық реактивтермен және 10 сұрақпен ----------------
     3: {"topic": "Қауіпсіздік ережелері",
         "theory": "Зертханада қауіпсіздік сақтау міндетті.",
-        "lab": ("Қорғаныш көзілдірігі, қолғап, лабораториялық халат", "Барлық қауіпсіздік құралдары қолданылуда", "Қауіпсіз жұмыс қамтамасыз етілді"),
+        "lab": ("Қорғаныш көзілдірігі, қолғап", "Барлық құралдар қолданылуда", "Қауіпсіз жұмыс қамтамасыз етілді"),
+        "colors": ["#CCCCCC", "#228B22"], # Сұр -> Жасыл
         "ai": "Қауіпсіздік бұзылған жағдайда реакция қалай өзгереді?",
         "test": [
             ("Қорғаныш көзілдірігі не үшін қажет?", ["Сән үшін", "Көзді қорғау үшін", "Түс үшін"], 1),
@@ -72,6 +74,7 @@ lesson_data = {
     4: {"topic": "Қанықпаған байланыс",
         "theory": "C=C және C≡C байланыстары реакцияға оңай түседі.",
         "lab": ("Br₂", "Түссіздену байқалады", "Алкен немесе алкин бар екенін көрсетеді"),
+        "colors": ["#A52A2A", "rgba(255,255,255,0.2)"],
         "ai": "Неліктен қанықпаған байланыстар реакцияға тез түседі?",
         "test": [
             ("Қанықпаған байланыс?", ["C–C", "C=C", "C≡C"], 1),
@@ -85,8 +88,7 @@ lesson_data = {
             ("Қос байланыс түрі?", ["C=C, C≡C", "C–C", "–OH"], 0),
             ("Сапалық әдіс не үшін?", ["Функционалдық топты анықтау", "Бағалау", "Талдау"], 0)
         ]
-    },
-    # ------------------ 5–34 сабақтарды дәл осылай толтыру ------------------
+    }
 }
 
 # ---------------- UI BLOCKS ----------------
@@ -94,26 +96,52 @@ def show_theory(text):
     st.subheader("📖 Теория")
     st.info(text)
 
-def show_lab(reagents, observation, conclusion):
+def show_lab(reagents, observation, conclusion, colors):
     st.subheader("🔬 Зертханалық жұмыс")
-    st.write(f"**Реактивтер:** {reagents}")
-    st.write("**Зертханалық реакция анимациясы:**")
-    progress_bar = st.progress(0)
-    reaction_status = st.empty()
-    for i in range(1, 101):
-        time.sleep(0.01)
-        progress_bar.progress(i)
-        if i < 30:
-            reaction_status.text("Реактив қосылды...")
-        elif i < 70:
-            reaction_status.text(f"Бақылау: {observation}")
-        else:
-            reaction_status.text(f"Қорытынды: {conclusion}")
-    reaction_status.text(f"Қорытынды: {conclusion}")
+    
+    # CSS Анимациясы (Пробирка)
+    st.markdown(f"""
+    <style>
+    .test-tube-container {{ display: flex; justify-content: center; padding: 20px; }}
+    .test-tube {{
+        width: 50px; height: 170px; border: 3px solid #ccc;
+        border-bottom-left-radius: 25px; border-bottom-right-radius: 25px;
+        position: relative; overflow: hidden; background: rgba(255,255,255,0.1);
+    }}
+    .liquid {{
+        position: absolute; bottom: 0; width: 100%; height: 0%;
+        transition: height 1.5s, background-color 2s;
+    }}
+    </style>
+    """, unsafe_allow_html=True)
+
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        tube_placeholder = st.empty()
+        tube_placeholder.markdown('<div class="test-tube-container"><div class="test-tube"><div class="liquid"></div></div></div>', unsafe_allow_html=True)
+
+    with col2:
+        st.write(f"**Реактивтер:** {reagents}")
+        if st.button("🧪 Реакцияны бастау"):
+            progress_bar = st.progress(0)
+            status = st.empty()
+            
+            for i in range(1, 101):
+                time.sleep(0.02)
+                progress_bar.progress(i)
+                if i < 40:
+                    status.text("Реактив қосылуда...")
+                    tube_placeholder.markdown(f'<div class="test-tube-container"><div class="test-tube"><div class="liquid" style="height: 50%; background-color: {colors[0]};"></div></div></div>', unsafe_allow_html=True)
+                elif i < 80:
+                    status.text(f"Бақылау: {observation}")
+                    tube_placeholder.markdown(f'<div class="test-tube-container"><div class="test-tube"><div class="liquid" style="height: 70%; background-color: {colors[1]};"></div></div></div>', unsafe_allow_html=True)
+                else:
+                    status.success(f"Қорытынды: {conclusion}")
+                    tube_placeholder.markdown(f'<div class="test-tube-container"><div class="test-tube"><div class="liquid" style="height: 80%; background-color: {colors[1]};"></div></div></div>', unsafe_allow_html=True)
 
 def show_ai(task):
     st.subheader("🤖 AI-симуляция тапсырмасы")
-    user_answer = st.text_area("AI жауабы / ойыңды жаз")
+    st.text_area("AI жауабы / ойыңды жаз", key=f"ai_input_{lesson_selected}")
     if st.button("AI-дан үлгі жауап"):
         st.success(task)
 
@@ -121,23 +149,28 @@ def show_test(test_items):
     st.subheader("📝 Тест")
     score = 0
     for idx, (q, opts, correct) in enumerate(test_items):
-        ans = st.radio(f"{idx+1}. {q}", opts, key=f"q{idx}")
+        ans = st.radio(f"{idx+1}. {q}", opts, key=f"q{idx}_{lesson_selected}")
         if ans and opts.index(ans) == correct:
             score += 1
     st.write(f"✅ Ұпай: {score} / {len(test_items)}")
 
 # ---------------- CONTENT ----------------
-lesson_number = int(lesson_selected.split("-")[0])
-data = lesson_data.get(lesson_number, None)
+# Скриншоттағы қатені түзету үшін сабақ нөмірін алуды нақтыладық
+lesson_id = int(lesson_selected.split("-")[0])
+data = lesson_data.get(lesson_id)
 
 if data:
-    st.header(f"{lesson_number}-сабақ. {data['topic']}")
+    st.header(f"{lesson_id}-сабақ. {data['topic']}")
     show_theory(data["theory"])
-    show_lab(*data["lab"])
+    
+    # Түстерді деректерден алу немесе стандартты түс беру
+    colors = data.get("colors", ["#3498db", "#e74c3c"])
+    show_lab(data["lab"][0], data["lab"][1], data["lab"][2], colors)
+    
     show_ai(data["ai"])
     show_test(data["test"])
 else:
     st.warning("Бұл сабаққа контент кезең-кезеңімен қосылады")
 
 st.markdown("---")
-st.caption("©️ Chemistry + AI | Streamlit оқу платформасы")
+st.caption("© Chemistry + AI | Streamlit оқу платформасы")
